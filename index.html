@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>峻銘&妤溱婚禮的座位查詢系統</title>
+    
+    <style>
+        /* 寶可夢咖啡廳 (Pokémon Café) 柔和木質與溫暖輕食色系 */
+        :root {
+            --primary-color: #8d6e63; /* 溫暖的拿鐵咖啡棕 */
+            --primary-hover: #70534a; /* 深焙可可棕 */
+            --text-color: #4e342e; /* 沉穩的黑咖啡色文字 */
+            --bg-color: #fdfaf6; /* 溫柔的燕麥奶色背景 */
+            --card-bg: #ffffff; /* 純白奶油塊 */
+            --border-color: #e0d4c3; /* 淺烤吐司邊框色 */
+            
+            /* 桌區色系（調校為日系 Café 輕柔馬卡龍色） */
+            --color-a: #e8f5e9; /* 抹茶歐蕾（淺綠） */
+            --color-b: #fdf2e9; /* 泰式奶茶（淺粉橘） */
+            --color-c: #fff3e0; /* 蜂蜜鬆餅（圓桌淺橘） */
+            --color-d: #e1f5fe; /* 薄荷蘇打（淺藍） */
+            --color-e: #e1f5fe; /* 薄荷蘇打（淺藍） */
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 25px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(141, 110, 99, 0.08); /* 暖色調輕陰影 */
+            text-align: center;
+            margin-bottom: 25px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            background-color: #fffdfb; /* 奶油白 */
+            color: var(--text-color);
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            padding: 14px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .result-zone {
+            margin-top: 15px;
+            min-height: 60px;
+        }
+
+        .result-card {
+            background-color: #fbf8f3; /* 輕焙燕麥 */
+            border-left: 6px solid var(--primary-color);
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: left;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .result-card h3 {
+            margin: 0 0 10px 0;
+            color: var(--text-color);
+        }
+
+        .seat-highlight {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #d35400; /* 焦糖橘 */
+        }
+
+        .pokemon-highlight {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #c0392b; /* 蘋果紅 */
+            background: #fff5f5;
+            padding: 2px 10px;
+            border-radius: 20px;
+            border: 1px dashed #f5b7b1;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .error-msg {
+            color: #c0392b;
+            font-weight: bold;
+            padding: 15px;
+        }
+
+        /* 完整現場桌位圖視覺化 */
+        .map-container {
+            max-width: 950px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 35px 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(141, 110, 99, 0.08);
+            text-align: center;
+            box-sizing: border-box;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stage-tips {
+            background: #f4ebe1; /* 木質層板色 */
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 15px;
+            row-gap: 30px;
+            align-items: stretch;
+        }
+
+        .map-table {
+            border-radius: 12px;
+            padding: 15px 10px;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(141, 110, 99, 0.04);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        .map-table .t-title {
+            font-size: 1.25rem;
+            margin-bottom: 5px;
+        }
+        .map-table .t-code {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            font-weight: normal;
+        }
+
+        .decor-box {
+            border: 1px solid var(--border-color);
+            padding: 10px 5px;
+            font-size: 0.85rem;
+            color: #8a736b;
+            background: #fdfbf7;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* 空間元件定位 */
+        .t-stair-left { grid-column: span 1; }
+        .t-a { grid-column: span 2; background-color: var(--color-a); min-height: 140px; }
+        .t-b { grid-column: span 2; background-color: var(--color-b); min-height: 140px; }
+        .t-stair-mid { grid-column: span 1; }
+        .t-blank-r1 { grid-column: span 2; }
+
+        .t-photo { grid-column: span 1; background: #faf0e6; border: 1px dashed var(--primary-color); min-height: 60px; }
+        .t-blank-mid { grid-column: span 3; }
+        .t-couple { grid-column: span 2; background-color: #fff; border: 2px dashed #e74c3c; min-height: 60px; color: #e74c3c; }
+        .t-blank-r2 { grid-column: span 2; }
+
+        .t-c { grid-column: span 3; background-color: var(--color-c); border-radius: 50%; min-height: 140px; } 
+        .t-blank-r3 { grid-column: span 1; }
+        .t-d { grid-column: span 2; background-color: var(--color-d); min-height: 120px; } 
+        .t-e { grid-column: span 2; background-color: var(--color-e); min-height: 120px; } 
+
+        /* 網頁最下方全賓客寶可夢清單樣式 */
+        .list-container {
+            max-width: 950px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 35px 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(141, 110, 99, 0.08);
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .list-container h2 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
+
+        .pokemon-table-wrapper {
+            overflow-x: auto; /* 手機板可橫向滾動 */
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .pokemon-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        /* 內容全部置中，呼應座位圖質感 */
+        .pokemon-table th, .pokemon-table td {
+            padding: 14px 15px;
+            text-align: center;
+            border-bottom: 1px solid #f2e9dc;
+        }
+
+        /* 表頭比照現場提示列色調 */
+        .pokemon-table th {
+            background-color: #f4ebe1;
+            color: var(--text-color);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .pokemon-table tr:nth-child(even) {
+            background-color: #fffdfb;
+        }
+
+        .pokemon-table tr:hover {
+            background-color: #fbf5ed;
+            transition: background-color 0.2s ease;
+        }
+
+        /* 甜點系精靈球小徽章 */
+        .badge-pokemon {
+            background: #fff5f5;
+            color: #c0392b;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            border: 1px solid #f5b7b1;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(192, 57, 43, 0.05);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .layout-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            .t-stair-left, .t-stair-mid, .t-blank-r1, .t-blank-mid, .t-blank-r2, .t-blank-r3 { display: none; }
+            .t-c { border-radius: 12px; min-height: unset; padding: 20px 10px; }
+            .t-photo { min-height: unset; padding: 12px; }
+            .t-couple, .t-a, .t-b, .t-d, .t-e { min-height: unset; padding: 20px 10px; }
+            
+            .pokemon-table th, .pokemon-table td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>來吶，你坐呀( •ω• )✧ 🔍</h1>
+        <p style="font-size:0.95rem; color:#8a736b; margin-top:-10px;">輸入您的姓名，快速幫您帶位</p>
+        <div class="search-box">
+            <input type="text" id="nameInput" placeholder="請輸入您的姓名（例如：陳妤溱）" onkeypress="handleKeyPress(event)">
+            <button onclick="searchSeat()">查詢</button>
+        </div>
+        
+        <div class="result-zone" id="resultZone"></div>
+    </div>
+
+    <div class="map-container">
+        <h2>現場平面桌位圖</h2>
+        <div class="stage-tips">【前方】 陽台 / 投影幕</div>
+        
+        <div class="layout-grid">
+            <div class="decor-box t-stair-left">樓梯</div>
+            <div class="map-table t-a">
+                <div class="t-title">A 桌</div>
+                <div class="t-code">(男方&女方家長)</div>
+            </div>
+            <div class="map-table t-b">
+                <div class="t-title">B 桌</div>
+                <div class="t-code">(女方親友)</div>
+            </div>
+            <div class="decor-box t-stair-mid">樓梯</div>
+            <div class="t-blank-r1"></div>
+
+            <div class="decor-box t-photo">拍照區</div>
+            <div class="t-blank-mid"></div>
+            <div class="map-table t-couple">
+                <div class="t-title">新人席 ✨</div>
+                <div class="t-code">新郎 & 新娘</div>
+            </div>
+            <div class="t-blank-r2"></div>
+
+            <div class="map-table t-c">
+                <div class="t-title">C 桌</div>
+                <div class="t-code">大圓桌包廂區<br>(男方好友)</div>
+            </div>
+            <div class="t-blank-r3"></div>
+            <div class="map-table t-d">
+                <div class="t-title">D 桌</div>
+                <div class="t-code">新人席樓梯右方<br>(女方好友)</div>
+            </div>
+            <div class="map-table t-e">
+                <div class="t-title">E 桌</div>
+                <div class="t-code">新人席樓梯右方<br>(女方好友)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="list-container">
+        <h2>(=①ω①=) 婚禮訓練家座位圖鑑 (=①ω①=)</h2>
+        <div class="pokemon-table-wrapper">
+            <table class="pokemon-table">
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>桌號</th>
+                        <th>座位號</th>
+                        <th>對應寶可夢</th>
+                    </tr>
+                </thead>
+                <tbody id="fullTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 名單資料庫
+        const guestList = [
+            // 女方好友/家人
+            { name: "陳錦裕", table: "A 桌", seat: "1 號位", pokemon: "始祖小鳥" },
+            { name: "李淑惠", table: "A 桌", seat: "2 號位", pokemon: "扒手貓" },
+            { name: "陳巧軒", table: "B 桌", seat: "3 號位", pokemon: "布撥" },
+            { name: "陳均維", table: "B 桌", seat: "4 號位", pokemon: "木木梟" },
+            { name: "陳宜溦", table: "B 桌", seat: "5 號位", pokemon: "米立龍" },
+            { name: "曾柏凱", table: "B 桌", seat: "6 號位", pokemon: "阿勃梭魯" },
+            { name: "李淑女", table: "A 桌", seat: "7 號位", pokemon: "皮卡丘" },
+            { name: "黃進德", table: "A 桌", seat: "8 號位", pokemon: "妙蛙種子" },
+            { name: "黃培鈴", table: "B 桌", seat: "9 號位", pokemon: "六尾" },
+            { name: "黃乙筑", table: "B 桌", seat: "11 號位", pokemon: "伊布" },
+            { name: "黃享喆", table: "B 桌", seat: "12、13 號位", pokemon: "小磁怪、哎呀球菇" },
+            { name: "李佳峻", table: "A 桌", seat: "15 號位", pokemon: "赫拉克羅斯" },
+            { name: "林秀美", table: "A 桌", seat: "16 號位", pokemon: "墨海馬" },
+            { name: "李欣儒", table: "B 桌", seat: "17 號位", pokemon: "小貓怪" },
+            { name: "李彧穎", table: "B 桌", seat: "18 號位", pokemon: "捲捲耳" },
+            { name: "李苡苓", table: "B 桌", seat: "14(吃牛)、19(吃蝦)號位", pokemon: "小火龍、青綿鳥" },
+            
+            // 女方好友/攜伴
+            { name: "李家瑋", table: "D 桌", seat: "39、40 號位", pokemon: "淚眼蜥、迷你龍" },
+            { name: "陳妍婷", table: "D 桌", seat: "41 號位", pokemon: "燭光靈" },
+            { name: "王怡方", table: "D 桌", seat: "42 號位", pokemon: "傑尼龜和卡咪龜" },
+            { name: "李承勳", table: "E 桌", seat: "43 號位", pokemon: "卡蒂狗" },
+            { name: "李沐恆", table: "E 桌", seat: "44 號位", pokemon: "瑪力露" },
+            { name: "郭政堂", table: "E 桌", seat: "45 號位", pokemon: "好啦魷" },
+            { name: "吳紹廷", table: "E 桌", seat: "46 號位", pokemon: "寶貝龍" },
+            { name: "陳佳嫈", table: "E 桌", seat: "47 號位", pokemon: "迷你芙" },
+            { name: "洪慧華", table: "D 桌", seat: "48 號位", pokemon: "地鼠(阿羅拉)" },
+            { name: "栢于婷", table: "D 桌", seat: "49 號位", pokemon: "皮皮" },
+            { name: "張政輝", table: "D 桌", seat: "50 號位", pokemon: "童偶熊" },
+
+            // 男方好友/家人
+            { name: "葉鴻志", table: "A 桌", seat: "20 號位", pokemon: "喵喵" },
+            { name: "林杏枝", table: "A 桌", seat: "21 號位", pokemon: "走路草" },
+            { name: "葉晉嘉", table: "A 桌", seat: "22 號位", pokemon: "穿山鼠" },
+            { name: "葉怡珊", table: "A 桌", seat: "23 號位", pokemon: "豆豆鴿" },
+            { name: "陳進融", table: "A 桌", seat: "24 號位", pokemon: "美錄坦" },
+            { name: "葉淑美", table: "A 桌", seat: "25 號位", pokemon: "凱西" },
+            { name: "姑丈", table: "A 桌", seat: "26 號位", pokemon: "猴怪" },
+            { name: "姑姑兒子", table: "A 桌", seat: "27、28 號位", pokemon: "鬼斯、長尾怪手" },
+            { name: "蔡富棋", table: "C 桌", seat: "29 號位", pokemon: "可可多拉" },
+            { name: "周志鑫", table: "C 桌", seat: "31(吃蝦)、32(吃牛) 號位", pokemon: "利歐路、小仙奶" },
+            { name: "卓冠吟", table: "C 桌", seat: "33、34 號位", pokemon: "呱呱泡蛙、波可比" },
+            { name: "林士賢", table: "C 桌", seat: "35、36 號位" , pokemon: "拉帝歐斯、泡沫栗鼠" },
+            { name: "林信佑", table: "C 桌", seat: "37(吃牛)、38(吃羊) 號位", pokemon: "巨翅飛魚、茸茸羊" },
+
+            // 新人席
+            { name: "葉峻銘", table: "新人桌", seat: "新郎位", pokemon: "𐒨꒱⁾◕ͦ꤮̥̭◕ͦ⁽꒰𐒧" },
+            { name: "陳妤溱", table: "新人桌", seat: "新娘位", pokemon: "ϞϞ(๑⚈ ․̫ ⚈๑)∩ " }
+        ];
+
+        // 核心修正：改用安全穩定的直接渲染，避免 DOM 載入順序引發 innerHTML 錯誤
+        function renderFullTable() {
+            const tbody = document.getElementById('fullTableBody');
+            if (tbody) {
+                let rowsHtml = '';
+                guestList.forEach(guest => {
+                    rowsHtml += `
+                        <tr>
+                            <td><strong>${guest.name}</strong></td>
+                            <td>${guest.table}</td>
+                            <td>${guest.seat}</td>
+                            <td><span class="badge-pokemon">${guest.pokemon}</span></td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = rowsHtml;
+            }
+        }
+
+        // 執行表格渲染
+        renderFullTable();
+
+        function searchSeat() {
+            const inputName = document.getElementById('nameInput').value.trim().toLowerCase();
+            const resultZone = document.getElementById('resultZone');
+            
+            if (!inputName) {
+                resultZone.innerHTML = '<span class="error-msg">請先輸入姓名喔！</span>';
+                return;
+            }
+
+            const results = guestList.filter(g => g.name.toLowerCase().includes(inputName));
+
+            if (results.length > 0) {
+                let htmlContent = '';
+                results.forEach(guest => {
+                    htmlContent += `
+                        <div class="result-card" style="margin-bottom: 10px;">
+                            <h3>找到了! ${guest.name}坐在這裡٩(｡・ω・｡)</h3>
+                            <div>桌號：<span class="seat-highlight">${guest.table}</span></div>
+                            <div>座位：<span class="seat-highlight">${guest.seat}</span></div>
+                            <div>你抽到了寶可夢：<span class="pokemon-highlight">✨ ${guest.pokemon} ✨</span></div>
+                        </div>
+                    `;
+                });
+                resultZone.innerHTML = htmlContent;
+            } else {
+                resultZone.innerHTML = `
+                    <div class="error-msg">
+                        找不到「${document.getElementById('nameInput').value}」的座位資訊。<br>
+                        <span style="font-size:0.85rem; font-weight:normal; color:#8a736b;">請嘗試輸入名字（如：葉峻銘）</span>
+                    </div>
+                `;
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                searchSeat();
+            }
+        }
+    </script>
+</body>
+</html>
